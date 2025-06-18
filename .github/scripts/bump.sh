@@ -4,7 +4,7 @@ git fetch --tag 2>/dev/null
 version="$(git tag --sort=-v:refname | head -1 | sed 's/^v//')"
 
 IFS='.' read -ra tokens <<<"${version:-0.0.0}"
-major="${tokens[0]}; minor="${tokens[1]}; patch="${tokens[2]}"
+major="${tokens[0]}"; minor="${tokens[1]}"; patch="${tokens[2]}"
 
 case "$1" in
   major) major=$((major + 1)); minor=0; patch=0;;
