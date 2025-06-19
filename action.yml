@@ -3,6 +3,9 @@ description: |
   変更したファイルをコミットし，プルリクエストを作成します．
   プルリクエストのタイトルや本文には，コミットメッセージがそのまま利用されます．
   パーミッションに「contents: write」と「pull-requests: write」が必要です．
+branding:
+  color: green
+  icon: refresh-cw
 inputs:
   message:
     required: true
