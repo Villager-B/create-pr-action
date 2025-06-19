@@ -1,46 +1,107 @@
-# create-pr-action
+# auto-commit-pr-action
 
 ## 概要
-このリポジトリは、GitHub Actionsを用いて変更ファイルのコミット・プルリクエスト作成・リリース・バージョン管理を自動化するためのアクションおよびワークフローを提供します。
+このGitHub Actionは、変更されたファイルを自動でコミットし、プルリクエストを作成するためのアクションです。ワークフロー内でファイルを変更した後、このアクションを使用することで、手動でのコミット・プッシュ・PR作成作業を自動化できます。
 
 ## 主な機能
-- 変更ファイルの自動コミットとプルリクエスト作成
-- セマンティックバージョニングに基づくバージョン管理
-- GitHubリリースの自動作成
-- テスト用ワークフローの提供
+- 📝 変更ファイルの自動コミット
+- 🔄 プルリクエストの自動作成
+- 🏷️ ブランチ名の自動生成（`auto/{run_id}/{run_attempt}`形式）
+- 🤖 GitHub Actions Botによる自動実行
 
 ## 使い方
-### プルリクエスト作成アクション
-`action.yml` で定義されているアクションを利用することで、変更ファイルを自動でコミットし、プルリクエストを作成できます。
 
-#### 必要なパーミッション
-- `contents: write`
-- `pull-requests: write`
+### 基本的な使用例
 
-#### 入力
-- `message`: コミットメッセージ（必須）
+```yaml
+name: Auto Commit and Create PR
+on:
+  workflow_dispatch:
 
-#### 出力
-- `branch`: 作成されたプルリクエストのブランチ名
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      # ファイルを変更する処理
+      - name: Modify files
+        run: |
+          echo "Updated content" > example.txt
+      
+      # 自動コミットとPR作成
+      - name: Create PR
+        uses: shimasan0x00/auto-commit-pr-action@v1
+        with:
+          message: "feat: ファイルを更新しました"
+```
 
-### リリースワークフロー
-`.github/workflows/release.yml` では、バージョンアップ（patch, minor, major）を選択してリリースを自動作成できます。
+### 入力パラメータ
 
-#### 実行例
-GitHub Actionsの「workflow_dispatch」からバージョンアップレベル（patch, minor, major）を選択して実行します。
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| `message` | ✅ | コミットメッセージ（PRのタイトル・本文にも使用されます） |
 
-#### バージョン管理スクリプト
-`.github/scripts/bump.sh` で最新タグを取得し、指定レベルでバージョンを自動更新・タグ付与・リモートへpushします。
+### 出力パラメータ
 
-### テストワークフロー
-`.github/workflows/test.yml` では、プルリクエスト作成アクションの動作確認を自動で行います。
+| パラメータ | 説明 |
+|-----------|------|
+| `branch` | 作成されたプルリクエストのブランチ名 |
 
-## ディレクトリ構成
-- `action.yml`: プルリクエスト作成アクションの定義
-- `.github/scripts/bump.sh`: バージョン管理用スクリプト
-- `.github/workflows/release.yml`: リリース自動化ワークフロー
-- `.github/workflows/test.yml`: テスト用ワークフロー
+### 必要な権限
+
+このアクションを使用するには、以下の権限が必要です：
+
+```yaml
+permissions:
+  contents: write      # ファイルのコミット・プッシュに必要
+  pull-requests: write # プルリクエストの作成に必要
+```
+
+## 動作の流れ
+
+1. **ブランチ作成**: `auto/{run_id}/{run_attempt}` 形式で新しいブランチを作成
+2. **ファイル追加**: ワークスペース内の全変更ファイルをステージング
+3. **コミット**: 指定されたメッセージでコミット
+4. **プッシュ**: 新しいブランチをリモートにプッシュ
+5. **PR作成**: プルリクエストを作成（タイトル・本文はコミットメッセージと同じ）
+
+## 使用例
+
+### 設定ファイルの自動更新
+
+```yaml
+- name: Update config
+  run: |
+    # 設定ファイルを更新する処理
+    echo "new_config_value" >> config.json
+  
+- name: Create PR for config update
+  uses: shimasan0x00/auto-commit-pr-action@v1
+  with:
+    message: "chore: 設定ファイルを更新"
+```
+
+### ドキュメントの自動生成
+
+```yaml
+- name: Generate docs
+  run: |
+    # ドキュメント生成処理
+    ./generate-docs.sh
+  
+- name: Create PR for docs
+  uses: shimasan0x00/auto-commit-pr-action@v1
+  with:
+    message: "docs: ドキュメントを自動生成"
+```
 
 ## 注意事項
-- `.github/scripts/bump.sh` を利用する場合は、実行権限（chmod +x）が必要です。
-- GitHub Actionsの実行には、必要なパーミッション設定を忘れずに行ってください。
+
+- このアクションは、ワークフロー内でファイルが変更されている場合に使用してください
+- ブランチ名は自動生成されるため、重複の心配はありません
+- コミットメッセージはPRのタイトル・本文としても使用されます
+- 必要な権限が設定されていない場合、アクションは失敗します
